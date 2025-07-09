@@ -22,7 +22,7 @@ app.config['GIF_UPLOAD_FOLDER'] = os.path.join(BASE_DIR, gif_upload_folder)
 app.config['MAX_CONTENT_LENGTH'] = int(os.getenv('MAX_CONTENT_LENGTH', 16 * 1024 * 1024))
 
 # app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')
-# app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('SQLALCHEMY_DATABASE_URI')
+app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('SQLALCHEMY_DATABASE_URI')
 # app.config['UPLOAD_FOLDER'] = os.getenv('UPLOAD_FOLDER')
 # app.config['GIF_UPLOAD_FOLDER'] = os.getenv('GIF_UPLOAD_FOLDER')
 # app.config['MAX_CONTENT_LENGTH'] = int(os.getenv('MAX_CONTENT_LENGTH', 16 * 1024 * 1024))
@@ -118,6 +118,7 @@ def admin_recipes():
 def admin_products():
     if not session.get('is_admin'):
         abort(404)
+
     if request.method == 'POST':
         name = request.form.get('name')
         description = request.form.get('description', '')
@@ -133,8 +134,11 @@ def admin_products():
 
         if file and allowed_file(file.filename):
             filename = secure_filename(file.filename)
-            filepath = os.path.join(app.config['UPLOAD_FOLDER'], 'products', filename)
-            os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+
+            products_folder = os.path.join(app.config['UPLOAD_FOLDER'], 'products')
+            os.makedirs(products_folder, exist_ok=True)
+
+            filepath = os.path.join(products_folder, filename)
             file.save(filepath)
 
             new_product = Product(
@@ -148,6 +152,7 @@ def admin_products():
             )
             db.session.add(new_product)
             db.session.commit()
+
             flash('Продукт успешно добавлен')
             return redirect(url_for('admin_products'))
         else:
@@ -471,4 +476,4 @@ def api_recipes():
 if __name__ == "__main__":
     with app.app_context():
         db.create_all()
-    app.run(debug=True)
+    app.run()

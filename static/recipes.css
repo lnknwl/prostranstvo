@@ -102,3 +102,80 @@ body, html {
 #loadMoreBtn:hover {
   background: rgba(255, 255, 255, 0.8);
 }
+
+@media (max-width: 992px) {
+  .hero-content {
+    padding: 30px 20px;
+    max-width: 100%;
+  }
+
+  .recipe-card img {
+    height: 160px;
+  }
+
+  .modal-image-wrapper {
+    aspect-ratio: 16 / 9;
+  }
+
+  .recipe-card .card-title {
+    font-size: 1.1rem;
+  }
+
+  #loadMoreBtn {
+    max-width: 100%;
+    width: 80%;
+    font-size: 1rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .hero-content {
+    padding: 20px 15px;
+  }
+
+  .recipe-card img {
+    height: 140px;
+  }
+
+  .recipe-card .card-title {
+    font-size: 1rem;
+  }
+
+  .modal-image-wrapper {
+    aspect-ratio: 16 / 10;
+  }
+
+  #loadMoreBtn {
+    width: 90%;
+    font-size: 0.95rem;
+    padding: 10px 16px;
+  }
+}
+
+@media (max-width: 480px) {
+  .hero-content {
+    padding: 15px 10px;
+  }
+
+  .recipe-card img {
+    height: 120px;
+  }
+
+  .recipe-card .card-body {
+    padding: 10px;
+  }
+
+  .recipe-card .card-title {
+    font-size: 0.95rem;
+  }
+
+  .modal-image-wrapper {
+    aspect-ratio: 1 / 1;
+  }
+
+  #loadMoreBtn {
+    width: 100%;
+    font-size: 0.9rem;
+    padding: 8px 12px;
+  }
+}
