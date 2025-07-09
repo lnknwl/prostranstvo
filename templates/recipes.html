@@ -116,7 +116,6 @@
 
         attachCardListeners();
 
-        // если страниц больше нет, скрываем кнопку и показываем сообщение
         if (!data.has_next) {
           noMoreData = true;
           loadMoreBtn.style.display = 'none';
@@ -175,7 +174,6 @@
       loadRecipes();
     });
 
-    // Первая загрузка
     loadRecipes();
   </script>
 

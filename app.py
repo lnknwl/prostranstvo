@@ -202,10 +202,6 @@ def admin_exercises():
     categories = ['Руки', 'Грудь', 'Ноги', 'Плечи', 'Пресс', 'Ягодицы']
     return render_template('admin_exercises.html', exercises=exercises, categories=categories)
 
-from flask import request, jsonify, redirect, url_for
-from werkzeug.utils import secure_filename
-import os
-
 @app.route('/edit_product/<int:product_id>', methods=['POST'])
 def edit_product(product_id):
     product = Product.query.get_or_404(product_id)
@@ -417,8 +413,6 @@ def products_page():
 @app.errorhandler(404)
 def page_not_found(error):
     return render_template("404.html"), 404
-
-from sqlalchemy import func
 
 @app.route('/api/search_recipes')
 def search_recipes():
