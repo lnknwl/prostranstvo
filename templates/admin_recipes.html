@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <title>Админка - Управление рецептами</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='admin.css') }}">
+</head>
+<body class="p-4">
+  <div class="container">
+    <div class="text-center mb-4">
+      <h1>Админка - Управление рецептами</h1>
+      <div class="d-flex justify-content-center gap-2 mt-3">
+        <a href="{{ url_for('admin_recipes') }}" class="btn btn-outline-secondary">Рецепты</a>
+        <a href="{{ url_for('admin_products') }}" class="btn btn-outline-secondary">Продукты</a>
+        <a href="{{ url_for('admin_exercises') }}" class="btn btn-outline-secondary">Упражнения</a>
+      </div>
+    </div>
+
+    {% with messages = get_flashed_messages() %}
+      {% if messages %}
+        <div class="alert alert-info">
+          {% for message in messages %}
+            <div>{{ message }}</div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    <form method="POST" enctype="multipart/form-data" class="mb-5 w-50 mx-auto">
+      <div class="mb-3">
+        <label for="title" class="form-label">Название</label>
+        <input type="text" name="title" id="title" class="form-control" required>
+      </div>
+      <div class="mb-3">
+        <label for="description" class="form-label">Описание</label>
+        <textarea name="description" id="description" class="form-control" rows="3"></textarea>
+      </div>
+      <div class="mb-3">
+        <label for="ingredients" class="form-label">Ингредиенты (через запятую)</label>
+        <textarea name="ingredients" id="ingredients" class="form-control" rows="3"></textarea>
+      </div>
+      <div class="mb-3">
+        <label for="file" class="form-label">Изображение</label>
+        <input type="file" name="file" id="file" accept="image/*" class="form-control" required>
+      </div>
+      <button type="submit" class="btn btn-primary w-100">Добавить рецепт</button>
+    </form>
+
+    <h2 class="mb-3">Список рецептов</h2>
+    <div class="row row-cols-1 row-cols-md-4 g-3" id="recipeContainer">
+      {% for recipe in recipes %}
+        <div class="col" id="card-col-{{ recipe.id }}">
+          <div class="card">
+            <img src="{{ url_for('static', filename=recipe.image_url) }}" class="card-img-top" alt="{{ recipe.title }}">
+            <div class="card-body text-center">
+              <h5 class="card-title">{{ recipe.title }}</h5>
+              <div class="btn-group">
+                <button
+                  class="btn btn-sm btn-outline-primary"
+                  data-bs-toggle="modal"
+                  data-bs-target="#editModal"
+                  data-id="{{ recipe.id }}"
+                  data-title="{{ recipe.title }}"
+                  data-description="{{ recipe.description }}"
+                  data-ingredients="{{ recipe.ingredients }}"
+                  data-image="{{ recipe.image_url }}"
+                >Редактировать</button>
+                <button type="button" 
+                        class="btn btn-sm btn-outline-danger delete-btn" 
+                        data-bs-toggle="modal" 
+                        data-bs-target="#confirmDeleteModal"
+                        data-id="{{ recipe.id }}"
+                >Удалить</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+
+    <div class="modal fade" id="editModal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+          <form id="editForm" enctype="multipart/form-data">
+            <div class="modal-header">
+              <h5 class="modal-title">Редактировать рецепт</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+            </div>
+            <div class="modal-body">
+              <input type="hidden" name="id" id="edit-id">
+              <div class="mb-3">
+                <label class="form-label">Название</label>
+                <input type="text" name="title" id="edit-title" class="form-control" required>
+              </div>
+              <div class="mb-3">
+                <label class="form-label">Описание</label>
+                <textarea name="description" id="edit-description" class="form-control" rows="3"></textarea>
+              </div>
+              <div class="mb-3">
+                <label class="form-label">Ингредиенты</label>
+                <textarea name="ingredients" id="edit-ingredients" class="form-control" rows="3"></textarea>
+              </div>
+              <div class="mb-3">
+                <label class="form-label">Текущее изображение</label><br>
+                <img id="edit-image-preview" src="" alt="" class="img-fluid mb-2" style="max-height: 200px;">
+                <input type="file" name="file" accept="image/*" class="form-control mt-2">
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-success" id="saveEditBtn">Сохранить изменения</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal fade" id="confirmDeleteModal" tabindex="-1" aria-labelledby="confirmDeleteLabel" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="confirmDeleteLabel">Подтверждение удаления</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+          </div>
+          <div class="modal-body">
+            Вы уверены, что хотите удалить этот рецепт?
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+            <button type="button" id="confirmDeleteBtn" class="btn btn-danger">Удалить</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    document.querySelectorAll('[data-bs-target="#editModal"]').forEach(button => {
+    button.addEventListener('click', event => {
+      const id = button.getAttribute('data-id');
+      const title = button.getAttribute('data-title');
+      const description = button.getAttribute('data-description');
+      const ingredients = button.getAttribute('data-ingredients');
+      const imagePath = button.getAttribute('data-image');
+
+      console.log("Открытие модалки редактирования:");
+      console.log({ id, title, description, ingredients, imagePath });
+
+      document.getElementById('edit-id').value = id;
+      document.getElementById('edit-title').value = title;
+      document.getElementById('edit-description').value = description;
+      document.getElementById('edit-ingredients').value = ingredients;
+      document.getElementById('edit-image-preview').src = `/static/${imagePath}`;
+    });
+  });
+
+
+    document.getElementById('saveEditBtn').addEventListener('click', async () => {
+      console.log("Кнопка сохранения нажата");
+      const form = document.getElementById('editForm');
+      const formData = new FormData(form);
+      const recipeId = formData.get('id');
+
+      try {
+        const response = await fetch(`/edit_recipe/${recipeId}`, {
+          method: 'POST',
+          headers: { 'X-Requested-With': 'XMLHttpRequest' },
+          body: formData
+        });
+
+        if (response.ok) {
+          const updated = await response.json();
+          const card = document.getElementById(`card-col-${recipeId}`);
+          if (card) {
+            card.querySelector('h5.card-title').textContent = updated.title;
+            card.querySelector('img').src = `/static/${updated.image_url}`;
+            
+            const editButton = card.querySelector('[data-bs-target="#editModal"]');
+            editButton.setAttribute('data-title', updated.title);
+            editButton.setAttribute('data-description', updated.description);
+            editButton.setAttribute('data-ingredients', updated.ingredients);
+            editButton.setAttribute('data-image', updated.image_url);
+          }
+
+          bootstrap.Modal.getInstance(document.getElementById('editModal')).hide();
+        } else {
+          alert('Ошибка при сохранении изменений');
+        }
+      } catch (err) {
+        console.error(err);
+        alert('Ошибка при сохранении изменений');
+      }
+    });
+
+    let recipeIdToDelete = null;
+    document.querySelectorAll('.delete-btn').forEach(button => {
+      button.addEventListener('click', () => {
+        recipeIdToDelete = button.getAttribute('data-id');
+      });
+    });
+
+    document.getElementById('confirmDeleteBtn').addEventListener('click', async () => {
+      if (!recipeIdToDelete) return;
+
+      try {
+        const response = await fetch(`/delete_recipe/${recipeIdToDelete}`, {
+          method: 'POST',
+          headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        });
+
+        if (response.ok) {
+          const card = document.getElementById(`card-col-${recipeIdToDelete}`);
+          if (card) card.remove();
+
+          bootstrap.Modal.getInstance(document.getElementById('confirmDeleteModal')).hide();
+          recipeIdToDelete = null;
+        } else {
+          alert('Ошибка при удалении рецепта');
+        }
+      } catch (err) {
+        console.error(err);
+        alert('Ошибка при удалении рецепта');
+      }
+    });
+  </script>
+</body>
+</html>

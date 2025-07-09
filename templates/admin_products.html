@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <title>Админка - Управление продуктами</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='admin.css') }}">
+</head>
+<body class="p-4">
+  <div class="container">
+    <div class="text-center mb-4">
+      <h1>Админка - Управление продуктами</h1>
+      <div class="d-flex justify-content-center gap-2 mt-3">
+        <a href="{{ url_for('admin_recipes') }}" class="btn btn-outline-secondary">Рецепты</a>
+        <a href="{{ url_for('admin_products') }}" class="btn btn-outline-secondary">Продукты</a>
+        <a href="{{ url_for('admin_exercises') }}" class="btn btn-outline-secondary">Упражнения</a>
+      </div>
+    </div>
+
+    {% with messages = get_flashed_messages() %}
+      {% if messages %}
+        <div class="alert alert-info">
+          {% for message in messages %}
+            <div>{{ message }}</div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    <form method="POST" enctype="multipart/form-data" class="mb-5 w-50 mx-auto">
+    <div class="mb-3">
+      <label for="name" class="form-label">Название</label>
+      <input type="text" name="name" id="name" class="form-control" required>
+    </div>
+
+    <div class="mb-3">
+      <label for="description" class="form-label">Описание</label>
+      <textarea name="description" id="description" class="form-control" rows="3"></textarea>
+    </div>
+
+    <div class="mb-3">
+      <label class="form-label">Пищевая ценность (на 100 г)</label>
+      <div class="row g-2">
+        <div class="col">
+          <input type="number" step="0.1" name="calories" class="form-control" placeholder="Ккал" required>
+        </div>
+        <div class="col">
+          <input type="number" step="0.1" name="protein" class="form-control" placeholder="Белки (г)">
+        </div>
+        <div class="col">
+          <input type="number" step="0.1" name="fat" class="form-control" placeholder="Жиры (г)">
+        </div>
+        <div class="col">
+          <input type="number" step="0.1" name="carbs" class="form-control" placeholder="Углеводы (г)">
+        </div>
+      </div>
+    </div>
+
+    <div class="mb-3">
+      <label for="file" class="form-label">Изображение</label>
+      <input type="file" name="file" id="file" accept="image/*" class="form-control" required>
+    </div>
+
+    <button type="submit" class="btn btn-primary w-100">Добавить продукт</button>
+  </form>
+
+
+
+    <div class="row row-cols-1 row-cols-md-4 g-3">
+      {% for product in products %}
+        <div class="col">
+          <div class="product-card card">
+            <img src="{{ url_for('static', filename=product.image_url) }}" alt="{{ product.name }}">
+            <div class="card-body">
+              <h5 class="card-title">{{ product.name }}</h5>
+              <p class="nutrition">{{ product.calories }} ккал / {{ product.protein }}б / {{ product.fat }}ж / {{ product.carbs }}у</p>
+              <div class="btn-group">
+                <button
+                  class="btn btn-sm btn-outline-primary"
+                  data-bs-toggle="modal"
+                  data-bs-target="#editProductModal"
+                  data-id="{{ product.id }}"
+                  data-name="{{ product.name }}"
+                  data-description="{{ product.description }}"
+                  data-image="{{ url_for('static', filename=product.image_url) }}"
+                  data-calories="{{ product.calories }}"
+                  data-protein="{{ product.protein }}"
+                  data-fat="{{ product.fat }}"
+                  data-carbs="{{ product.carbs }}"
+                >Редактировать</button>
+                <form action="{{ url_for('delete_product', product_id=product.id) }}" method="POST" class="m-0 p-0 d-inline">
+                  <button type="button"
+                          class="btn btn-sm btn-outline-danger delete-btn"
+                          data-bs-toggle="modal"
+                          data-bs-target="#confirmDeleteModal">Удалить</button>
+                </form>
+              </div>
+            </div>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="modal fade" id="editProductModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+      <div class="modal-content">
+        <form id="editProductForm" method="POST" enctype="multipart/form-data">
+          <div class="modal-header">
+            <h5 class="modal-title">Редактировать продукт</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+          </div>
+          <div class="modal-body">
+            <input type="hidden" name="id" id="edit-product-id">
+            <div class="mb-3">
+              <label class="form-label">Название</label>
+              <input type="text" name="name" id="edit-product-name" class="form-control" required>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Описание</label>
+              <textarea name="description" id="edit-product-description" class="form-control" rows="3"></textarea>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Текущее изображение</label><br>
+              <img id="edit-product-image-preview" src="" alt="" class="img-fluid mb-2" style="max-height: 200px;">
+              <input type="file" name="file" accept="image/*" class="form-control mt-2">
+            </div>
+            <div class="mb-3 row">
+              <div class="col"><input type="number" step="0.1" name="calories" id="edit-product-calories" class="form-control" placeholder="Ккал на 100г" required></div>
+              <div class="col"><input type="number" step="0.1" name="protein" id="edit-product-protein" class="form-control" placeholder="Белки (г)"></div>
+              <div class="col"><input type="number" step="0.1" name="fat" id="edit-product-fat" class="form-control" placeholder="Жиры (г)"></div>
+              <div class="col"><input type="number" step="0.1" name="carbs" id="edit-product-carbs" class="form-control" placeholder="Углеводы (г)"></div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="submit" class="btn btn-primary">Сохранить изменения</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal fade" id="confirmDeleteModal" tabindex="-1" aria-labelledby="confirmDeleteLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="confirmDeleteLabel">Подтверждение удаления</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+        </div>
+        <div class="modal-body">
+          Вы уверены, что хотите удалить этот продукт?
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+          <button type="button" id="confirmDeleteBtn" class="btn btn-danger">Удалить</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    const editProductModal = document.getElementById('editProductModal');
+    editProductModal.addEventListener('show.bs.modal', event => {
+      const button = event.relatedTarget;
+      const id = button.getAttribute('data-id');
+      const name = button.getAttribute('data-name');
+      const description = button.getAttribute('data-description');
+      const image = button.getAttribute('data-image');
+      const calories = button.getAttribute('data-calories');
+      const protein = button.getAttribute('data-protein');
+      const fat = button.getAttribute('data-fat');
+      const carbs = button.getAttribute('data-carbs');
+
+      document.getElementById('edit-product-id').value = id;
+      document.getElementById('edit-product-name').value = name;
+      document.getElementById('edit-product-description').value = description;
+      document.getElementById('edit-product-image-preview').src = image;
+      document.getElementById('edit-product-calories').value = calories;
+      document.getElementById('edit-product-protein').value = protein;
+      document.getElementById('edit-product-fat').value = fat;
+      document.getElementById('edit-product-carbs').value = carbs;
+
+      const form = document.getElementById('editProductForm');
+      form.action = `/edit_product/${id}`;
+    });
+
+    document.getElementById('editProductForm').addEventListener('submit', async e => {
+      e.preventDefault();
+      const form = e.target;
+      const id = document.getElementById('edit-product-id').value;
+      const formData = new FormData(form);
+
+      try {
+        const response = await fetch(`/edit_product/${id}`, {
+          method: 'POST',
+          headers: { 'X-Requested-With': 'XMLHttpRequest' },
+          body: formData
+        });
+
+        if (response.ok) {
+          const updated = await response.json();
+
+          const card = document.querySelector(`.card [data-id="${id}"]`)?.closest('.col');
+          if (card) {
+            card.querySelector('.card-title').textContent = updated.name;
+            card.querySelector('img').src = `/static/${updated.image_url}`;
+            card.querySelector('.nutrition').textContent = `${updated.calories} ккал / ${updated.protein}б / ${updated.fat}ж / ${updated.carbs}у`;
+
+            const editButton = card.querySelector('[data-bs-target="#editProductModal"]');
+            editButton.setAttribute('data-name', updated.name);
+            editButton.setAttribute('data-description', updated.description);
+            editButton.setAttribute('data-image', `/static/${updated.image_url}`);
+            editButton.setAttribute('data-calories', updated.calories);
+            editButton.setAttribute('data-protein', updated.protein);
+            editButton.setAttribute('data-fat', updated.fat);
+            editButton.setAttribute('data-carbs', updated.carbs);
+          }
+
+          bootstrap.Modal.getInstance(editProductModal).hide();
+        } else {
+          alert('Ошибка при сохранении изменений');
+        }
+      } catch (error) {
+        console.error(error);
+        alert('Ошибка соединения');
+      }
+    });
+
+    let formToSubmit = null;
+    let productColToRemove = null;
+
+    document.querySelectorAll('.delete-btn').forEach(button => {
+      button.addEventListener('click', event => {
+        formToSubmit = event.target.closest('form');
+        productColToRemove = event.target.closest('.col');
+      });
+    });
+
+    document.getElementById('confirmDeleteBtn').addEventListener('click', async () => {
+      if (!formToSubmit || !productColToRemove) return;
+
+      const actionUrl = formToSubmit.action;
+
+      try {
+        const response = await fetch(actionUrl, {
+          method: 'POST',
+          headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        });
+
+        if (response.ok) {
+          productColToRemove.remove();
+          bootstrap.Modal.getInstance(document.getElementById('confirmDeleteModal')).hide();
+        } else {
+          alert('Ошибка при удалении');
+        }
+      } catch (error) {
+        console.error(error);
+        alert('Ошибка соединения при удалении');
+      }
+    });
+  </script>
+
+</body>
+</html>

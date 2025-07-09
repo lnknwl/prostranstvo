@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <title>Админка - Управление упражнениями</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='admin.css') }}">
+</head>
+<body class="p-4">
+  <div class="container">
+    <div class="text-center mb-4">
+      <h1>Админка - Управление упражнениями</h1>
+      <div class="d-flex justify-content-center gap-2 mt-3">
+        <a href="{{ url_for('admin_recipes') }}" class="btn btn-outline-secondary">Рецепты</a>
+        <a href="{{ url_for('admin_products') }}" class="btn btn-outline-secondary">Продукты</a>
+        <a href="{{ url_for('admin_exercises') }}" class="btn btn-outline-secondary active">Упражнения</a>
+      </div>
+    </div>
+
+    {% with messages = get_flashed_messages() %}
+      {% if messages %}
+        <div class="alert alert-info">
+          {% for message in messages %}
+            <div>{{ message }}</div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    <form method="POST" enctype="multipart/form-data" class="mb-5 w-50 mx-auto">
+    <div class="mb-3">
+      <label for="name" class="form-label">Название упражнения</label>
+      <input type="text" name="name" id="name" class="form-control" required>
+    </div>
+
+    <div class="mb-3">
+      <label for="category" class="form-label">Категория</label>
+      <select name="category" id="category" class="form-select" required>
+        <option value="">-- Выберите категорию --</option>
+        <option value="Руки">Руки</option>
+        <option value="Грудь">Грудь</option>
+        <option value="Ноги">Ноги</option>
+        <option value="Плечи">Плечи</option>
+        <option value="Пресс">Пресс</option>
+        <option value="Ягодицы">Ягодицы</option>
+      </select>
+    </div>
+
+    <div class="mb-3">
+      <label for="description" class="form-label">Описание</label>
+      <textarea name="description" id="description" class="form-control" rows="3" required></textarea>
+    </div>
+
+    <div class="mb-3">
+      <label for="gif_file" class="form-label">GIF-файл упражнения</label>
+      <input type="file" name="gif_file" id="gif_file" accept="image/gif" class="form-control" required>
+    </div>
+
+    <button type="submit" class="btn btn-primary w-100">Добавить упражнение</button>
+  </form>
+
+
+    <div class="row row-cols-1 row-cols-md-3 g-3">
+      {% for exercise in exercises %}
+      <div class="col" data-id="{{ exercise.id }}">
+        <div class="product-card card">
+          <img src="{{ url_for('static', filename=exercise.gif_url) }}" alt="{{ exercise.name }}" class="card-img-top">
+          <div class="card-body">
+            <h5 class="card-title">{{ exercise.name }}</h5>
+            <p class="card-text"><strong>Категория:</strong> {{ exercise.category }}</p>
+            <p class="card-text">{{ exercise.description }}</p>
+            <div class="btn-group">
+              <button
+                class="btn btn-sm btn-outline-primary"
+                data-bs-toggle="modal"
+                data-bs-target="#editExerciseModal"
+                data-id="{{ exercise.id }}"
+                data-name="{{ exercise.name }}"
+                data-description="{{ exercise.description }}"
+                data-category="{{ exercise.category }}"
+                data-gif="{{ url_for('static', filename=exercise.gif_url) }}"
+              >Редактировать</button>
+
+              <form action="{{ url_for('delete_exercise', exercise_id=exercise.id) }}" method="POST" class="m-0 p-0">
+                <button type="button"
+                        class="btn btn-sm btn-outline-danger delete-btn"
+                        data-bs-toggle="modal"
+                        data-bs-target="#confirmDeleteExerciseModal">Удалить</button>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- Modal: Edit Exercise -->
+  <div class="modal fade" id="editExerciseModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+      <div class="modal-content">
+        <form id="editExerciseForm" method="POST" enctype="multipart/form-data">
+          <div class="modal-header">
+            <h5 class="modal-title">Редактировать упражнение</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+          </div>
+          <div class="modal-body">
+            <input type="hidden" name="id" id="edit-exercise-id">
+            <div class="mb-3">
+              <label class="form-label">Название</label>
+              <input type="text" name="name" id="edit-exercise-name" class="form-control" required>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Категория</label>
+              <select name="category" id="edit-exercise-category" class="form-select" required>
+                <option value="Руки">Руки</option>
+                <option value="Грудь">Грудь</option>
+                <option value="Ноги">Ноги</option>
+                <option value="Плечи">Плечи</option>
+                <option value="Пресс">Пресс</option>
+                <option value="Ягодицы">Ягодицы</option>
+              </select>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Описание</label>
+              <textarea name="description" id="edit-exercise-description" class="form-control" rows="3" required></textarea>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Текущая гифка</label><br>
+              <img id="edit-exercise-gif-preview" src="" alt="" class="img-fluid mb-2" style="max-height: 200px;">
+              <input type="file" name="gif_file" accept="image/gif" class="form-control mt-2">
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="submit" class="btn btn-primary">Сохранить изменения</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Confirm Delete -->
+  <div class="modal fade" id="confirmDeleteExerciseModal" tabindex="-1" aria-labelledby="confirmDeleteLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="confirmDeleteLabel">Подтверждение удаления</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+        </div>
+        <div class="modal-body">
+          Вы уверены, что хотите удалить это упражнение?
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+          <button type="button" id="confirmDeleteExerciseBtn" class="btn btn-danger">Удалить</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    document.getElementById('editExerciseForm').addEventListener('submit', async function (e) {
+      e.preventDefault();
+      const form = e.target;
+      const formData = new FormData(form);
+      const exerciseId = formData.get('id');
+
+      try {
+        const response = await fetch(`/edit_exercise/${exerciseId}`, {
+          method: 'POST',
+          headers: { 'X-Requested-With': 'XMLHttpRequest' },
+          body: formData
+        });
+
+        if (response.ok) {
+          const updated = await response.json();
+
+          const card = document.querySelector(`[data-id="${exerciseId}"]`).closest('.col');
+          card.querySelector('h5.card-title').textContent = updated.name;
+          card.querySelector('.card-text').textContent = updated.description;
+          card.querySelector('img').src = `/static/${updated.gif_url}`;
+
+          const editBtn = card.querySelector('[data-bs-target="#editExerciseModal"]');
+          editBtn.setAttribute('data-name', updated.name);
+          editBtn.setAttribute('data-description', updated.description);
+          editBtn.setAttribute('data-category', updated.category);
+          editBtn.setAttribute('data-gif', `/static/${updated.gif_url}`);
+
+          bootstrap.Modal.getInstance(document.getElementById('editExerciseModal')).hide();
+        } else {
+          alert('Ошибка при сохранении');
+        }
+      } catch (err) {
+        console.error(err);
+        alert('Ошибка при сохранении');
+      }
+    });
+
+    let exerciseIdToDelete = null;
+    document.querySelectorAll('.delete-btn').forEach(button => {
+      button.addEventListener('click', () => {
+        exerciseIdToDelete = button.closest('[data-id]').getAttribute('data-id');
+      });
+    });
+
+    document.getElementById('confirmDeleteExerciseBtn').addEventListener('click', async () => {
+      if (!exerciseIdToDelete) return;
+
+      try {
+        const response = await fetch(`/delete_exercise/${exerciseIdToDelete}`, {
+          method: 'POST',
+          headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        });
+
+        if (response.ok) {
+          const card = document.querySelector(`[data-id="${exerciseIdToDelete}"]`).closest('.col');
+          if (card) card.remove();
+
+          bootstrap.Modal.getInstance(document.getElementById('confirmDeleteExerciseModal')).hide();
+          exerciseIdToDelete = null;
+        } else {
+          alert('Ошибка при удалении');
+        }
+      } catch (err) {
+        console.error(err);
+        alert('Ошибка при удалении');
+      }
+    });
+    document.getElementById('editExerciseModal').addEventListener('show.bs.modal', function (event) {
+    const button = event.relatedTarget;
+    const id = button.getAttribute('data-id');
+    const name = button.getAttribute('data-name');
+    const description = button.getAttribute('data-description');
+    const category = button.getAttribute('data-category');
+    const gifUrl = button.getAttribute('data-gif');
+
+    document.getElementById('edit-exercise-id').value = id;
+    document.getElementById('edit-exercise-name').value = name;
+    document.getElementById('edit-exercise-description').value = description;
+    document.getElementById('edit-exercise-category').value = category;
+    document.getElementById('edit-exercise-gif-preview').src = gifUrl;
+  });
+  </script>
+</body>
+</html>
