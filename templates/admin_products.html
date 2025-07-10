@@ -28,41 +28,46 @@
     {% endwith %}
 
     <form method="POST" enctype="multipart/form-data" class="mb-5 w-50 mx-auto">
-    <div class="mb-3">
-      <label for="name" class="form-label">Название</label>
-      <input type="text" name="name" id="name" class="form-control" required>
-    </div>
+      <div class="mb-3">
+        <label for="name" class="form-label">Название</label>
+        <input type="text" name="name" id="name" class="form-control" required>
+      </div>
 
-    <div class="mb-3">
-      <label for="description" class="form-label">Описание</label>
-      <textarea name="description" id="description" class="form-control" rows="3"></textarea>
-    </div>
+      <div class="mb-3">
+        <label for="description" class="form-label">Описание</label>
+        <textarea name="description" id="description" class="form-control" rows="3"></textarea>
+      </div>
 
-    <div class="mb-3">
-      <label class="form-label">Пищевая ценность (на 100 г)</label>
-      <div class="row g-2">
-        <div class="col">
-          <input type="number" step="0.1" name="calories" class="form-control" placeholder="Ккал" required>
-        </div>
-        <div class="col">
-          <input type="number" step="0.1" name="protein" class="form-control" placeholder="Белки (г)">
-        </div>
-        <div class="col">
-          <input type="number" step="0.1" name="fat" class="form-control" placeholder="Жиры (г)">
-        </div>
-        <div class="col">
-          <input type="number" step="0.1" name="carbs" class="form-control" placeholder="Углеводы (г)">
+      <div class="mb-3">
+        <label for="category" class="form-label">Категория</label>
+        <input type="text" name="category" id="category" class="form-control">
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label">Пищевая ценность (на 100 г)</label>
+        <div class="row g-2">
+          <div class="col">
+            <input type="number" step="0.1" name="calories" class="form-control" placeholder="Ккал" required>
+          </div>
+          <div class="col">
+            <input type="number" step="0.1" name="protein" class="form-control" placeholder="Белки (г)">
+          </div>
+          <div class="col">
+            <input type="number" step="0.1" name="fat" class="form-control" placeholder="Жиры (г)">
+          </div>
+          <div class="col">
+            <input type="number" step="0.1" name="carbs" class="form-control" placeholder="Углеводы (г)">
+          </div>
         </div>
       </div>
-    </div>
 
-    <div class="mb-3">
-      <label for="file" class="form-label">Изображение</label>
-      <input type="file" name="file" id="file" accept="image/*" class="form-control" required>
-    </div>
+      <div class="mb-3">
+        <label for="file" class="form-label">Изображение</label>
+        <input type="file" name="file" id="file" accept="image/*" class="form-control" required>
+      </div>
 
-    <button type="submit" class="btn btn-primary w-100">Добавить продукт</button>
-  </form>
+      <button type="submit" class="btn btn-primary w-100">Добавить продукт</button>
+    </form>
 
 
 
@@ -70,7 +75,14 @@
       {% for product in products %}
         <div class="col">
           <div class="product-card card">
-            <img src="{{ url_for('static', filename=product.image_url) }}" alt="{{ product.name }}">
+            <div class="position-relative">
+              <img src="{{ url_for('static', filename=product.image_url) }}" alt="{{ product.name }}" class="card-img-top">
+              {% if product.category %}
+                <div class="category-badge">{{ product.category }}</div>
+              {% else %}
+                <div class="category-badge">Без категории</div>
+              {% endif %}
+            </div>
             <div class="card-body">
               <h5 class="card-title">{{ product.name }}</h5>
               <p class="nutrition">{{ product.calories }} ккал / {{ product.protein }}б / {{ product.fat }}ж / {{ product.carbs }}у</p>
@@ -82,6 +94,7 @@
                   data-id="{{ product.id }}"
                   data-name="{{ product.name }}"
                   data-description="{{ product.description }}"
+                  data-category="{{ product.category or '' }}"
                   data-image="{{ url_for('static', filename=product.image_url) }}"
                   data-calories="{{ product.calories }}"
                   data-protein="{{ product.protein }}"
@@ -121,15 +134,19 @@
               <textarea name="description" id="edit-product-description" class="form-control" rows="3"></textarea>
             </div>
             <div class="mb-3">
-              <label class="form-label">Текущее изображение</label><br>
-              <img id="edit-product-image-preview" src="" alt="" class="img-fluid mb-2" style="max-height: 200px;">
-              <input type="file" name="file" accept="image/*" class="form-control mt-2">
+              <label class="form-label">Категория</label>
+              <input type="text" name="category" id="edit-product-category" class="form-control">
             </div>
             <div class="mb-3 row">
               <div class="col"><input type="number" step="0.1" name="calories" id="edit-product-calories" class="form-control" placeholder="Ккал на 100г" required></div>
               <div class="col"><input type="number" step="0.1" name="protein" id="edit-product-protein" class="form-control" placeholder="Белки (г)"></div>
               <div class="col"><input type="number" step="0.1" name="fat" id="edit-product-fat" class="form-control" placeholder="Жиры (г)"></div>
               <div class="col"><input type="number" step="0.1" name="carbs" id="edit-product-carbs" class="form-control" placeholder="Углеводы (г)"></div>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Текущее изображение</label><br>
+              <img id="edit-product-image-preview" src="" alt="" class="img-fluid mb-2" style="max-height: 200px;">
+              <input type="file" name="file" accept="image/*" class="form-control mt-2">
             </div>
           </div>
           <div class="modal-footer">
@@ -166,6 +183,7 @@
       const id = button.getAttribute('data-id');
       const name = button.getAttribute('data-name');
       const description = button.getAttribute('data-description');
+      const category = button.getAttribute('data-category') || '';
       const image = button.getAttribute('data-image');
       const calories = button.getAttribute('data-calories');
       const protein = button.getAttribute('data-protein');
@@ -175,6 +193,7 @@
       document.getElementById('edit-product-id').value = id;
       document.getElementById('edit-product-name').value = name;
       document.getElementById('edit-product-description').value = description;
+      document.getElementById('edit-product-category').value = category;
       document.getElementById('edit-product-image-preview').src = image;
       document.getElementById('edit-product-calories').value = calories;
       document.getElementById('edit-product-protein').value = protein;

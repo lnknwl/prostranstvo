@@ -73,3 +73,15 @@ form.mx-auto {
   border-radius: 0.5rem;
   box-shadow: 0 0 12px rgba(0, 0, 0, 0.05);
 }
+
+.category-badge {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background-color: rgba(0, 0, 0, 0.6);
+  color: #fff;
+  padding: 4px 8px;
+  font-size: 0.75rem;
+  border-radius: 4px;
+  z-index: 1;
+}

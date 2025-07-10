@@ -18,6 +18,10 @@ body, html {
   overflow: hidden;
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
   transition: transform 0.25s ease, box-shadow 0.25s ease;
+  border: none;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
 }
 
 .food-card:hover {
@@ -25,36 +29,85 @@ body, html {
   box-shadow: 0 16px 40px rgba(0, 0, 0, 0.15);
 }
 
-.food-card img {
+.square-image-container {
+  position: relative;
   width: 100%;
-  aspect-ratio: 1 / 1;
-  object-fit: cover;
-  display: block;
+  padding-top: 100%;
+  background: #f8f9fa;
+  overflow: hidden;
 }
 
-@media (max-width: 992px) {
-  .food-card img {
-    aspect-ratio: 4 / 3;
+.img-fit {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.card-body {
+  padding: 1.25rem;
+}
+
+.card-title {
+  font-weight: 600;
+  margin-bottom: 0.75rem;
+}
+
+.card-text {
+  color: #555;
+  margin-bottom: 1rem;
+}
+
+.list-group-item {
+  padding: 0.5rem 1.25rem;
+  border-color: rgba(0,0,0,0.05);
+}
+
+.square-image-container {
+  position: relative;
+  width: 100%;
+  padding-top: 100%;
+  background: #f8f9fa;
+  overflow: hidden;
+}
+
+.category-badge {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background-color: rgba(0, 0, 0, 0.6);
+  color: #fff;
+  padding: 3px 8px;
+  border-radius: 5px;
+  font-size: 0.90rem;
+  font-weight: 600;
+  pointer-events: none;
+  user-select: none;
+  white-space: nowrap;
+  max-width: 90%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+@media (max-width: 576px) {
+  .row-cols-sm-2 > * {
+    flex: 0 0 auto;
+    width: 100%;
   }
 }
 
-@media (max-width: 768px) {
-  .food-card {
-    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
-  }
-
-  .food-card img {
-    aspect-ratio: 3 / 2;
+@media (min-width: 576px) and (max-width: 992px) {
+  .row-cols-sm-2 > * {
+    flex: 0 0 auto;
+    width: 50%;
   }
 }
 
-@media (max-width: 480px) {
-  .food-card {
-    border-radius: 10px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  }
-
-  .food-card img {
-    aspect-ratio: 4 / 5;
+@media (min-width: 992px) {
+  .row-cols-lg-3 > * {
+    flex: 0 0 auto;
+    width: 33.333333%;
   }
 }

@@ -1,5 +1,6 @@
 import os
 from flask import Flask, jsonify, render_template, request, redirect, url_for, flash, session, flash, abort
+from sqlalchemy import func
 from werkzeug.utils import secure_filename
 from werkzeug.security import generate_password_hash, check_password_hash
 from models import db, Recipe, Product, Exercise
@@ -22,7 +23,7 @@ app.config['GIF_UPLOAD_FOLDER'] = os.path.join(BASE_DIR, gif_upload_folder)
 app.config['MAX_CONTENT_LENGTH'] = int(os.getenv('MAX_CONTENT_LENGTH', 16 * 1024 * 1024))
 
 # app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')
-app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('SQLALCHEMY_DATABASE_URI')
+# app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('SQLALCHEMY_DATABASE_URI')
 # app.config['UPLOAD_FOLDER'] = os.getenv('UPLOAD_FOLDER')
 # app.config['GIF_UPLOAD_FOLDER'] = os.getenv('GIF_UPLOAD_FOLDER')
 # app.config['MAX_CONTENT_LENGTH'] = int(os.getenv('MAX_CONTENT_LENGTH', 16 * 1024 * 1024))
@@ -111,7 +112,7 @@ def admin_recipes():
             flash('Неподдерживаемый формат файла')
             return redirect(request.url)
 
-    recipes = Recipe.query.all()
+    recipes = Recipe.query.order_by(Recipe.id.desc()).all()
     return render_template('admin_recipes.html', recipes=recipes)
 
 @app.route('/admin/products', methods=['GET', 'POST'])
@@ -122,6 +123,7 @@ def admin_products():
     if request.method == 'POST':
         name = request.form.get('name')
         description = request.form.get('description', '')
+        category = request.form.get('category', '')
         calories = request.form.get('calories', type=float)
         protein = request.form.get('protein', type=float) or 0.0
         fat = request.form.get('fat', type=float) or 0.0
@@ -144,6 +146,7 @@ def admin_products():
             new_product = Product(
                 name=name,
                 description=description,
+                category=category,
                 image_url='images/products/' + filename,
                 calories=calories,
                 protein=protein,
@@ -159,7 +162,7 @@ def admin_products():
             flash('Неподдерживаемый формат файла')
             return redirect(request.url)
 
-    products = Product.query.all()
+    products = Product.query.order_by(Product.id.desc()).all()
     return render_template('admin_products.html', products=products)
 
 @app.route('/admin/exercises/', methods=['GET', 'POST'])
@@ -203,7 +206,7 @@ def admin_exercises():
             flash('Неподдерживаемый формат файла')
             return redirect(request.url)
 
-    exercises = Exercise.query.all()
+    exercises = Exercise.query.order_by(Exercise.id.desc()).all()
     categories = ['Руки', 'Грудь', 'Ноги', 'Плечи', 'Пресс', 'Ягодицы']
     return render_template('admin_exercises.html', exercises=exercises, categories=categories)
 
@@ -412,8 +415,7 @@ def delete_exercise(exercise_id):
 
 @app.route('/products')
 def products_page():
-    products = Product.query.all()
-    return render_template('products.html', products=products)
+    return render_template('products.html')
 
 @app.errorhandler(404)
 def page_not_found(error):
@@ -421,20 +423,19 @@ def page_not_found(error):
 
 @app.route('/api/search_recipes')
 def search_recipes():
-    query = request.args.get('q', '').strip().lower()
+    query = request.args.get('q', '').strip()
     page = int(request.args.get('page', 1))
     per_page = 40
 
-    all_recipes = Recipe.query.order_by(Recipe.id).all()
+    base_query = Recipe.query.order_by(Recipe.id.desc())
 
     if query:
-        filtered = [r for r in all_recipes if query in r.title.lower()]
-    else:
-        filtered = all_recipes
-
-    start = (page - 1) * per_page
-    end = start + per_page
-    paginated = filtered[start:end]
+        lowered_query = f"%{query.lower()}%"
+        base_query = base_query.filter(
+            func.lower(Recipe.title).like(lowered_query)
+        )
+    
+    paginated = base_query.paginate(page=page, per_page=per_page, error_out=False)
 
     result = [{
         'id': r.id,
@@ -442,11 +443,48 @@ def search_recipes():
         'description': r.description,
         'ingredients': r.ingredients,
         'image_url': url_for('static', filename=r.image_url)
-    } for r in paginated]
+    } for r in paginated.items]
 
     return jsonify({
         'recipes': result,
-        'has_next': end < len(filtered)
+        'has_next': paginated.has_next,
+        'page': page,
+        'per_page': per_page,
+        'total': paginated.total
+    })
+
+@app.route('/api/search_products')
+def search_products():
+    query_str = request.args.get('q', '').strip()
+    page = int(request.args.get('page', 1))
+    per_page = 40
+
+    base_query = Product.query.order_by(Product.id.desc())
+
+    if query_str:
+        lowered_query = f"%{query_str.lower()}%"
+        base_query = base_query.filter(func.lower(Product.name).like(lowered_query))
+
+    paginated = base_query.paginate(page=page, per_page=per_page, error_out=False)
+
+    result = [{
+        'id': p.id,
+        'name': p.name,
+        'description': p.description,
+        'category': p.category or 'Без категории',
+        'calories': p.calories,
+        'protein': p.protein,
+        'fat': p.fat,
+        'carbs': p.carbs,
+        'image_url': url_for('static', filename=p.image_url)
+    } for p in paginated.items]
+
+    return jsonify({
+        'products': result,
+        'has_next': paginated.has_next,
+        'page': page,
+        'per_page': per_page,
+        'total': paginated.total
     })
 
 @app.route('/api/recipes')
@@ -454,7 +492,7 @@ def api_recipes():
     page = int(request.args.get('page', 1))
     per_page = 40
 
-    query = Recipe.query.order_by(Recipe.id)
+    query = Recipe.query.order_by(Recipe.id.desc())
     paginated = query.paginate(page=page, per_page=per_page, error_out=False)
 
     result = [{
@@ -476,4 +514,4 @@ def api_recipes():
 if __name__ == "__main__":
     with app.app_context():
         db.create_all()
-    app.run()
+    app.run(debug=True)
