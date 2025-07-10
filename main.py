@@ -423,49 +423,59 @@ def page_not_found(error):
 
 @app.route('/api/search_recipes')
 def search_recipes():
-    query = request.args.get('q', '').strip()
+    query = request.args.get('q', '').strip().lower()
     page = int(request.args.get('page', 1))
     per_page = 40
 
-    base_query = Recipe.query.order_by(Recipe.id.desc())
-
-    if query:
-        lowered_query = f"%{query.lower()}%"
-        base_query = base_query.filter(
-            func.lower(Recipe.title).like(lowered_query)
-        )
+    all_recipes = Recipe.query.order_by(Recipe.id.desc()).all()
     
-    paginated = base_query.paginate(page=page, per_page=per_page, error_out=False)
+    if query:
+        filtered_recipes = [
+            r for r in all_recipes 
+            if query in r.title.lower()
+        ]
+    else:
+        filtered_recipes = all_recipes
+
+    start = (page - 1) * per_page
+    end = start + per_page
+    paginated_items = filtered_recipes[start:end]
 
     result = [{
         'id': r.id,
         'title': r.title,
         'description': r.description,
         'ingredients': r.ingredients,
-        'image_url': url_for('static', filename=r.image_url)
-    } for r in paginated.items]
+        'image_url': url_for('static', filename=r.image_url) if r.image_url else None
+    } for r in paginated_items]
 
     return jsonify({
         'recipes': result,
-        'has_next': paginated.has_next,
+        'has_next': end < len(filtered_recipes),
         'page': page,
         'per_page': per_page,
-        'total': paginated.total
+        'total': len(filtered_recipes)
     })
 
 @app.route('/api/search_products')
 def search_products():
-    query_str = request.args.get('q', '').strip()
+    query_str = request.args.get('q', '').strip().lower()
     page = int(request.args.get('page', 1))
     per_page = 40
 
-    base_query = Product.query.order_by(Product.id.desc())
-
+    all_products = Product.query.order_by(Product.id.desc()).all()
+    
     if query_str:
-        lowered_query = f"%{query_str.lower()}%"
-        base_query = base_query.filter(func.lower(Product.name).like(lowered_query))
+        filtered_products = [
+            p for p in all_products 
+            if query_str in p.name.lower()
+        ]
+    else:
+        filtered_products = all_products
 
-    paginated = base_query.paginate(page=page, per_page=per_page, error_out=False)
+    start = (page - 1) * per_page
+    end = start + per_page
+    paginated_items = filtered_products[start:end]
 
     result = [{
         'id': p.id,
@@ -476,15 +486,15 @@ def search_products():
         'protein': p.protein,
         'fat': p.fat,
         'carbs': p.carbs,
-        'image_url': url_for('static', filename=p.image_url)
-    } for p in paginated.items]
+        'image_url': url_for('static', filename=p.image_url) if p.image_url else None
+    } for p in paginated_items]
 
     return jsonify({
         'products': result,
-        'has_next': paginated.has_next,
+        'has_next': end < len(filtered_products),
         'page': page,
         'per_page': per_page,
-        'total': paginated.total
+        'total': len(filtered_products)
     })
 
 @app.route('/api/recipes')
